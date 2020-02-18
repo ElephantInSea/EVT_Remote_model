@@ -13,7 +13,7 @@ void Btns_action (uc btn)
 	if (count != 1)
 		return;
 		
-	if (btn & 0x01)//10	// Up. btn - red
+	if ((btn & 0x01) && (flag_send_mode == 0))//10	// Up. btn - red
 	{
 		LED[led_active] = LED[led_active] + 1;
 		if (LED[led_active] > 9)
@@ -71,7 +71,7 @@ void Check_and_correct(uc num)
 	// 10 = A, 11 = B, 15 = F
 	if ((num == 7) || (num == 10) || (num == 11) || (num == 15))
 	{
-		error_code = 4; // Send Error
+		error_code = 5; // Wrong mode
 		return;
 	}	
 	else if (flag_rw == 0) // When reading, only the mode number is important
@@ -89,7 +89,7 @@ void Check_and_correct(uc num)
 	int24 factor = 1;
 	int24 temp = 0;
 	
-	for (i = 0; i < 5; i ++)
+	for (i = 0; i < 3; i ++)
 	{
 		int j = 0, j_max = (int)LED[i];
 		temp = 0;
@@ -104,6 +104,7 @@ void Check_and_correct(uc num)
 	//If the limit is exceeded - the display will reset to the maximum value
 	if (led_real > led_max)
 	{
+		error_code = 6;
 		temp = 10000;
 		for (i = 4; i >= 0; i --)
 		{
@@ -280,6 +281,7 @@ void Send()
 	a = b = c = d = 0;
 	flag_msg_received = 0;
 	
+	
 	//Package [0]
 	Package[0] = mode;
 	
@@ -303,7 +305,7 @@ void Send()
 	// The mode is greater than 13, or does 
 	// not fit into the limits for the mode
 	Check_and_correct(Package[0]);
-	if (error_code == 4) // Send Error // > 0
+	if (error_code == 6) // Send Error // > 0
 	{
 		flag_msg_received = 1;
 		return;
@@ -412,7 +414,16 @@ void Send_part(bit flag_first_launch)
 	}
 	
 	if (((i == 0) && (j == 1)) || (flag_first_launch == 1))
+	{
 		Send();
+		if (error_code == 6)  // Too large numbers on LED
+		{
+			error_code = 0;
+			// Reset of dispatch without consequences
+			i = j = 0;
+			flag_send_mode = 0;
+		}
+	}
 	else if ((i == 3) || ((flag_msg_received == 1) && (flag_mode_ampl == 0)))
 	{
 		led_on_E = 0x02;
@@ -450,23 +461,42 @@ uc Show_ERROR()
 		i = j = 0;
 	else if (error_code == 1)	// Parity
 	{
-		if (i < 10)
+		if (i < 8)				// 0.5c
 			work_led = 0x00; 
 	}
 	else if(error_code == 2)	// Line is broken
 	{
-		if (i & 0x10)//(i < 128)
+		if (i & 0x10)//(i < 128)	//16 - 1c
 			work_led = 0x00;
 	}
 	else if(error_code == 3)	// Alarm signal, 12 mode
 		work_led = 0x01;
-	else if(error_code == 4)	// Send Error
+	else if(error_code == 4)	// Send Error - Sent more or less
 	{
-		if (i < 100)//128 
-			work_led = 0x00;
-		else if((i > 150) && (i <= 200)) // 171, 214
+		//if (i < 100)//128 
+		//	work_led = 0x00;
+		//else if((i > 150) && (i <= 200)) // 171, 214
+		//	work_led = 0x00;
+		//if (((i & 0x70) && 0x50) || (((i & 0x70) && 0x70)))
+		
+		if (((i & 0x70) == 0x50) || ((i & 0x70) == 0x70))
 			work_led = 0x00;
 	}
+	else if(error_code == 5)	// Wrong mode
+	{
+		//if (i < 32)//128 
+		//	work_led = 0x00;
+		//else if((i > 64) && (i <= 96)) // 171, 214
+		//	work_led = 0x00;
+		//else if (i > 128);
+		uc tempi = (i >> 6);
+		uc tempi2 = 0x10 >> tempi; // unsigned int
+		//if(i & (0x10 >> (i >> 4)))
+		//if(i & (0x10 >> tempi))
+		if (i & tempi2)
+			work_led = 0x00;
+	}
+	// (error_code == 6)  // Too large numbers on LED
 	
 	return work_led;
 }
