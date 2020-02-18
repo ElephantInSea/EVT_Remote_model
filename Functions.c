@@ -43,6 +43,7 @@ void Btns_action (uc btn)
 		{
 			flag_send_mode = 1;
 			flag_rw = 1; //Write
+			led_on_E = 0x01;
 		}
 		else //STOP sending
 			flag_send_mode = flag_rw = 0;
@@ -77,20 +78,12 @@ void Check_and_correct(uc num)
 		return;
 		
 	int i = 0;
-	int24 led_max = 2047;
+	int24 led_max = 255;
 	
-	if (num == 0)
-		led_max = 199;
-	else if (num == 1)
-		return;
-		//led_max = 99999; // This is the maximum scoreboard
-	else if (num == 2)
-		led_max = 1999;
-	else if (num == 3)
-		led_max = 99;
-	else if (num > 7 && num < 10)	// 8, 9
+	if (num == 3)
 		led_max = 1;
-	// For 4-6 and 12-14 modes, the limit will remain 1
+	else if (num == 4)
+		led_max = 100;
 	
 	int24 led_real = 0;
 	int24 factor = 1;
@@ -157,6 +150,12 @@ void Read_Msg()
 	
 	if (temp != mode)
 		error_code = 1; // Parity error
+		
+	if (temp == temp) //1
+	{
+		//led_on_E = temp;
+		return;
+	}
 	
 	if (error_code == 0)
 	{
@@ -265,6 +264,7 @@ void Reg_Start_up ()
 	led_active = 0;	// The number of the selected indicator. 
 					// 4 is the far left
     led_count = 2;
+    led_on_E = 127;
     mode = 255;
 }
 
@@ -303,7 +303,7 @@ void Send()
 	// The mode is greater than 13, or does 
 	// not fit into the limits for the mode
 	Check_and_correct(Package[0]);
-	if (error_code > 0)
+	if (error_code == 4) // Send Error // > 0
 	{
 		flag_msg_received = 1;
 		return;
@@ -329,26 +329,39 @@ void Send()
 	if (flag_manual_auto)
 		Package[1] |= 0x20;
 	
-	Package[0] = (Package[0] << 4) | 0x0F;
+	// Package[0] = (Package[0] << 4) | 0x0F;
 	
-	int i = 0, max = 4;
+	int i = 0, max = 1; // 4
 	temp = 0;
 	
+	//uc er_flag = 0x02;
+	//PORTE = 0x1E;
 	while ((i < max) && (temp < 150))
 	{
+		//PORTE = 0x0D | (er_flag << 4);
+		//PORTE = 0x2E;
 		clrwdt();
 		//if (i == 4)
 		//	TXEN = 0; // Transmitter Turn Off
 		if (TXIF == 1)	// TXREG is empty
 		{
+			//PORTE = 0x4E;
 			bit parity = 0;
-			int t = (int)Package[i];
+			uc t = Package[i];
+			
+			//er_flag = 0x04;
 			
 			while (t)
 			{
 				if (t & 0x01)
 					parity = !parity;
 				t = t >> 1;
+				
+				//PORTE = 0x8E;
+				//PORTE = 0x0D | (er_flag << 4);
+				//er_flag ++;
+				//if (er_flag > 0x0F)
+				//	er_flag = 0;
 			}
 			
 			TX9D = parity;
@@ -360,19 +373,26 @@ void Send()
 			temp ++;	// fuze
 	}
 	
+	//PORTE = 0x1D;
+
+	//PORTE = 0x4D;
 	temp = 0;
 	while (temp < 250)
 	{
+		//PORTE = 0x2D;
 		temp ++;
 		if (TRMT == 1)	// TSR is empty
 		{
+			
+			//PORTE = 0x4D;
 			TXEN = 0; // Transmitter Turn Off
 			temp = 251;
 		}
 	}
 	
 	if (i != max) // Sent more or less
-		error_code = 4; // Line is broken
+		error_code = 4; // Send Error
+	
 	return ; 
 }
 
@@ -395,9 +415,11 @@ void Send_part(bit flag_first_launch)
 		Send();
 	else if ((i == 3) || ((flag_msg_received == 1) && (flag_mode_ampl == 0)))
 	{
+		led_on_E = 0x02;
 		i = j = 0;
 		if (flag_msg_received == 1)
 		{
+			led_on_E = 0x04;
 			Read_Msg();
 			flag_msg_received = 0;
 			if ((flag_mode_ampl == 0) && (error_code == 0))
@@ -406,4 +428,45 @@ void Send_part(bit flag_first_launch)
 		else if (error_code != 4) // Send Error
 			error_code = 2; // Line is broken
 	}
+}
+
+uc Show_ERROR()
+{
+	static uc i;
+	static uc j;
+	uc work_led = 0x80;	// 0x02 work; 0x01 error
+	clrwdt();
+	
+	j++;
+	if (j == 255)
+	{
+		j = 0;
+		i ++;
+		if (i == 255)
+			i = 0;		
+	}
+		
+	if(error_code == 0)			// Work
+		i = j = 0;
+	else if (error_code == 1)	// Parity
+	{
+		if (i < 10)
+			work_led = 0x00; 
+	}
+	else if(error_code == 2)	// Line is broken
+	{
+		if (i & 0x10)//(i < 128)
+			work_led = 0x00;
+	}
+	else if(error_code == 3)	// Alarm signal, 12 mode
+		work_led = 0x01;
+	else if(error_code == 4)	// Send Error
+	{
+		if (i < 100)//128 
+			work_led = 0x00;
+		else if((i > 150) && (i <= 200)) // 171, 214
+			work_led = 0x00;
+	}
+	
+	return work_led;
 }

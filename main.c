@@ -29,6 +29,7 @@ uc count_receive_data;
 uc error_code;
 uc error_code_interrupt;
 uc led_count;
+uc led_on_E;
 #include "Interrupts.h"
 
 interrupt iServer(void)
@@ -71,6 +72,8 @@ void main(void)
     uc mode_temp = 0, mode_time = 0;
     uc buttons = 0, buttons_time = 0; 
     
+    uc E_time = 0;
+    bit E_part = 0;
 
 	while(1)
 	{
@@ -147,8 +150,8 @@ void main(void)
 					if (mode_time > 20)
 					{
 						mode = temp;
-						flag_send_mode = 1;
-						flag_rw = 0; //Read
+						// flag_send_mode = 1;
+						// flag_rw = 0; //Read
 						Change_led_count (mode);
 					}
 				}
@@ -179,10 +182,37 @@ void main(void)
 			}
 		}
 		
+		
+		// отображение включенных пинов
 		PORTD = 0xE0; 
 		DDRE = 0x00;
-		
+		PORTE = 0x0F;
+		/*
 		PORTE = t | 0x0E;
+		for (t = 0; t < 10; t++){};
+		*/
+		// Индикация о работе
+		if(led_on_E != 127)
+		{
+			if (E_time == 0)
+				E_time = 100;
+			else if (E_time == 1)
+				led_on_E = 127;
+			
+			E_time -= 1;
+		}
+		
+		E_part = !E_part;
+	
+		if (E_part == 0)
+			PORTE = 0x0E | (led_on_E << 4);
+		else
+		{
+			PORTE = 0x0D | (led_on_E & 0xF0);
+			PORTE |= Show_ERROR();
+		}
+		
+			
 		for (t = 0; t < 10; t++){};
 		
 		clrwdt();
@@ -195,9 +225,11 @@ void main(void)
 		if ((flag_send_mode == 1) && (mode != 255))
 		{
 			Send_part(flag_first_launch);
+			
 			if (flag_first_launch)
 				flag_first_launch = 0;
 		}
+		
 		clrwdt();
 	}
 	
