@@ -31,11 +31,11 @@ void Btns_action (uc btn)
 			led_active = 3;//5
 		led_active --;
 	}
-	else if (btn & 0x02)//02	// Right. btn - blue
+	else if (btn & 0x02)//02	// left. btn - blue
 	{
 		led_active ++;
-		if (led_active > 2)//4
-			led_active = 2 - led_count;//4
+		if (led_active > led_count)//4
+			led_active = 0;//4
 	}
 	else if (btn & 0x04)//01	// Send
 	{
@@ -61,7 +61,9 @@ void Change_led_count (uc num)
 		led_count = 1;
 	else if (num == 2)
 		led_count = 0;
-	led_active = 2;
+	else
+		led_count = 2;
+	led_active = 0;
 }
 
 uc Get_port_e(uc part) // , uc data
