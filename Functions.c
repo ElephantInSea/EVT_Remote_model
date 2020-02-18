@@ -25,7 +25,7 @@ void Btns_action (uc btn)
 			LED[led_active] = 10;
 		LED[led_active] = LED[led_active] - 1;
 	}
-	else if (btn & 0x04)	// Left
+	else if (btn & 0x04)	// Left. btn - blue
 	{
 		if (led_active == 2 - led_count) //4
 			led_active = 3;//5
@@ -108,9 +108,9 @@ void Reg_Start_up ()
 	CREN = 0;
 	
 	
-	DDRE = 0xFC; 	// 0b11111100 Buttons * 5 and MANUAL/AUTO
+	DDRE = 0xF0;//FC 	// 0b11111100 Buttons * 5 and MANUAL/AUTO
 	
-	PORTE = 0;
+	PORTE = 0x0F;
 	
 	LED[0] = LED[1] = LED[2] = 0;
 	
@@ -125,4 +125,5 @@ void Reg_Start_up ()
     flag_msg_received = 0;	// Flag of received message
     error_code = 0;
     error_code_interrupt = 0;
+    led_count = 2;
 }

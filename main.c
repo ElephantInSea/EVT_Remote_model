@@ -74,16 +74,27 @@ void main(void)
     
     bit flag_first_launch = 1;
 	
-	
+	if (mode)
+	{
+		Btns_action(1);
+		Get_port_e(1);
+	}
+
 	while(1)
 	{
 		clrwdt();
+		DDRE = 0xF0;
+		PORTE = 0x0F;
 		// PORT D --------------------------------------------------------------
 		temp = 0x20 << d_line; // 08
 		//temp |= Show_ERROR (); //d_work_light;
 		// Code entered for model --
 		PORTC = 0;
-		PORTD = temp;
+		PORTD = temp ^ 0xE0;
+		// Code entered for model --
+		
+		// -------------------------
+		for (temp = 0; temp < 5; temp ++) {};
 		// -------------------------
 		
 		// PORT C --------------------------------------------------------------
@@ -109,12 +120,13 @@ void main(void)
 									// here.
 			temp = Translate_num_to_LED[(int)temp];
 		}
-		PORTC = temp;
+		PORTC = temp ^ 0xFF;
+		
+		for (temp = 0; temp < 20; temp ++) {};
 		
 		clrwdt();
 		// Code entered for model --
-		PORTC ^= 0xFF;
-		PORTD ^= 0xE0;
+		//PORTC ^= 0xFF;
 		// -------------------------
 		
 		// PORT E --------------------------------------------------------------
@@ -124,8 +136,9 @@ void main(void)
 			flag_manual_auto = 1;
 		
 		temp = (PORTE ^ 0xF8) >> 3;	// Port E is inverted
-		if((d_line != 0x01) && (temp > 0))	// mode
+		if((d_line != 1) && (temp > 0))	// mode
 		{
+			/*
 			// Parity condition and nonzero reception
 			temp = Get_port_e(d_line);
 			
@@ -151,7 +164,7 @@ void main(void)
 					led_active = 4;
 					LED[0] = LED[1] = LED[2] = 0;
 				}
-			}	
+			}	*/
 		}
 		else if (d_line == 0x01)	//Buttons
 		{
@@ -162,8 +175,6 @@ void main(void)
 					//
 				if ((buttons_time == 50) && buttons > 0)
 				{
-					/* TODO (#1#): Определить что делать с неотправленным 
-					               сообщением */
 					Btns_action (buttons);
 				}
 			}
@@ -175,15 +186,16 @@ void main(void)
 		}
 		clrwdt();
 		
+		/*
 		// Send Part -----------------------------------------------------------
 		if ((flag_send_mode == 1) && (mode != 255))
 		{
-			//Send_part(flag_first_launch);
+			Send_part(flag_first_launch);
 			if (flag_first_launch)
 				flag_first_launch = 0;
-		}
+		}*/
 		
-		for (temp = 0; temp < 20; temp ++) {};
+		
 		
 		d_line ++;
 		if (d_line > 2) // 4
