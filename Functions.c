@@ -426,11 +426,11 @@ void Send_part(bit flag_first_launch)
 	}
 	else if ((i == 3) || ((flag_msg_received == 1) && (flag_mode_ampl == 0)))
 	{
-		led_on_E = 0x02;
+		//led_on_E = 0x02;
 		i = j = 0;
 		if (flag_msg_received == 1)
 		{
-			led_on_E = 0x04;
+			//led_on_E = 0x04;
 			Read_Msg();
 			flag_msg_received = 0;
 			if ((flag_mode_ampl == 0) && (error_code == 0))
