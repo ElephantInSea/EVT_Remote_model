@@ -114,12 +114,19 @@ void main(void)
 		//	temp = 0;
 		if ((d_line == led_active) && (led_blink & 0x08))
 			temp = 0xFF; //0
+		else if (d_line > led_count)//(d_line < (2 - led_count))
+			temp = 0xFF; //0
 		else
 		{
 			temp = LED[(int)d_line];// The order of indicators is determined 
 									// here.
 			temp = Translate_num_to_LED[(int)temp];
 		}
+		
+		uc t = 0x01 << d_line;
+		if (mode & t)
+			temp &= 0x7F; ;
+		
 		PORTC = temp ^ 0xFF;
 		
 		for (temp = 0; temp < 20; temp ++) {};
@@ -128,59 +135,71 @@ void main(void)
 		// Code entered for model --
 		//PORTC ^= 0xFF;
 		// -------------------------
-		
-		
+		/*
+		LED[0] += 1;
+		if (LED[0] > 9)
+		{
+			LED[0] = 0;
+			LED[1] += 1;
+			if (LED[1] > 9)
+			{
+				LED[1] = 0;
+				LED[2] += 1;
+				if (LED[2] > 9)
+					LED[2] = 0;
+			}
+		}
+		*/
 		// PORT E --------------------------------------------------------------
 		
 		//temp = (PORTE ^ 0xE0) >> 5;	// Port E is inverted
 		PORTC = 0;
-		for (temp  = 0; temp < 10; temp ++) {};
+		//for (temp  = 0; temp < 10; temp ++) {};
 		
 		temp = PORTE;
 		temp = temp ^ 0xE0;
 		temp = temp >> 5;
 		
-		if (d_line == 0x00)	//Buttons
+		t = temp << 4;
+		
+		if((d_line > 0) && (temp > 0))	// mode
 		{
-			uc t = 0;
+			// Parity condition and nonzero reception
+			temp = Get_port_e(d_line);
 			
-			PORTD = 0xFF;
-			DDRE = 0x00;
-			
-			t = temp & 0xF0;
-			t ^= 0xF0;
-			PORTE = t | 0x0D;
-			for (t = 0; t < 5; t++){};
-			
-			t = temp << 4;
-			PORTE = t | 0x0E;
-			for (t = 0; t < 10; t++){};
-			
+			if (mode != temp)
+			{
+				if(mode_temp == temp)
+				{
+					mode_time ++;
+					if (mode_time > 20)
+					{
+						mode = temp;
+						flag_send_mode = 1;
+						flag_rw = 0; //Read
+						Change_led_count (mode);
+					}
+				}
+				else
+				{
+					mode = 255;		// Fuse
+					flag_send_mode = 0;
+					mode_temp = temp;
+					mode_time = 0;
+					led_active = 0;
+					LED[0] = LED[1] = LED[2] = 0;
+				}
+			}	
+		}
+		else if (d_line == 0x00)	//Buttons
+		{
 			if (temp == buttons)
 			{
 				if (buttons_time <= 10)	// A pressed key will work
-				{
 					buttons_time ++;	// only once
-					
-					LED[0] += 1;
-					if (LED[0] > 9)
-					{
-						LED[0] = 0;
-						LED[1] += 1;
-						if (LED[1] > 9)
-						{
-							LED[1] = 0;
-							LED[2] += 1;
-							if (LED[2] > 9)
-								LED[2] = 0;
-						}
-					}
-				}
 					//
 				if ((buttons_time == 10) && buttons > 0)
 					Btns_action (buttons);
-				
-				
 			}
 			else 
 			{
@@ -188,8 +207,14 @@ void main(void)
 				buttons = temp;
 			}
 		}
+		
+		PORTD = 0xE0;
+		DDRE = 0x00;
+		
+		PORTE = t | 0x0E;
+		for (t = 0; t < 10; t++){};
+		
 		clrwdt();
-		/**/
 		
 		d_line ++;
 		if (d_line > 2) // 4

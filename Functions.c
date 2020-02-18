@@ -25,13 +25,13 @@ void Btns_action (uc btn)
 			LED[led_active] = 10;
 		LED[led_active] = LED[led_active] - 1;
 	}
-	else if (btn & 0x02)//04	// Left. btn - blue
+	else if (btn & 0x10)//04	// Left
 	{
 		if (led_active == 2 - led_count) //4
 			led_active = 3;//5
 		led_active --;
 	}
-	else if (btn & 0x10)//02	// Right
+	else if (btn & 0x02)//02	// Right. btn - blue
 	{
 		led_active ++;
 		if (led_active > 2)//4
@@ -53,22 +53,43 @@ void Btns_action (uc btn)
 	return;
 }
 
-uc Get_port_e(uc part)
+void Change_led_count (uc num)
+{
+	if (num == 0)
+		led_count = 2;
+	else if (num == 1)
+		led_count = 1;
+	else if (num == 2)
+		led_count = 0;
+	led_active = 2;
+}
+
+uc Get_port_e(uc part) // , uc data
 {
 	uc ans = 0;
-	if (part == 1) // 3
-		ans += 5;
+	if (part == 2) // 3
+		ans += 3; // 5
 	
-	part = (PORTE ^ 0xF8) >> 3; // 0b000xxxxx
-	
+	part = (PORTE ^ 0xE0) >> 5; // 0b00000xxx
+	uc i;
+	for(i = 0; i < 5; i ++)
+	{
+		if (part & (0x01))// << i
+			ans += i;
+		part = part >> 1;
+	}
+	/*
 	while (part != 0x01)
 	{
 		part = part >> 1;
 		ans += 1;
 	}
-	if (ans > 6)
+	while (data != 0x01)
+	{
+		data = data >> 1;
 		ans += 1;
-	/* Here you can enter the setting of the amplitude mode 1, 2, 3 */
+	}*/
+	
 	return ans;
 }
 
