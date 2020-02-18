@@ -84,7 +84,7 @@ void main(void)
 	{
 		clrwdt();
 		DDRE = 0xF0;
-		PORTE = 0x0F;
+		PORTE = 0xFF;
 		// PORT D --------------------------------------------------------------
 		temp = 0x20 << d_line; // 08
 		//temp |= Show_ERROR (); //d_work_light;
@@ -129,65 +129,20 @@ void main(void)
 		//PORTC ^= 0xFF;
 		// -------------------------
 		
+		
 		// PORT E --------------------------------------------------------------
 		
 		//temp = (PORTE ^ 0xE0) >> 5;	// Port E is inverted
 		PORTC = 0;
-		DDRE = 0xF0;
-		PORTE = 0x0F;
-		uc t = 0;
-		for (t = 0; t < 10; t++){};
+		for (temp  = 0; temp < 10; temp ++) {};
 		
 		temp = PORTE;
 		temp = temp ^ 0xE0;
 		temp = temp >> 5;
 		
-		if((d_line != 0) && (temp > 0))	// mode
+		if (d_line == 0x00)	//Buttons
 		{
-			/*
-			// Parity condition and nonzero reception
-			temp = Get_port_e(d_line);
-			
-			if (mode != temp)
-			{
-				if(mode_temp == temp)
-				{
-					mode_time ++;
-					if (mode_time > 20)
-					{
-						mode = temp;
-						flag_send_mode = 1;
-						flag_rw = 0; //Read
-						//Change_led_count (mode);
-					}
-				}
-				else
-				{
-					mode = 255;		// Fuse
-					flag_send_mode = 0;
-					mode_temp = temp;
-					mode_time = 0;
-					led_active = 4;
-					LED[0] = LED[1] = LED[2] = 0;
-				}
-			}	
-					LED[0]++;
-					if (LED[0] > 9)
-					{
-						LED[0] = 0;
-						LED[1]++;
-						if (LED[1] > 9)
-						{
-							LED[1] = 0;
-							LED[2]++;
-							if (LED[2] > 9)
-								LED[2] = 0;
-						}
-					}
-			*/
-		}
-		else if (d_line == 0x00)	//Buttons
-		{
+			uc t = 0;
 			
 			PORTD = 0xFF;
 			DDRE = 0x00;
@@ -195,7 +150,7 @@ void main(void)
 			t = temp & 0xF0;
 			t ^= 0xF0;
 			PORTE = t | 0x0D;
-			for (t = 0; t < 10; t++){};
+			for (t = 0; t < 5; t++){};
 			
 			t = temp << 4;
 			PORTE = t | 0x0E;
@@ -207,13 +162,25 @@ void main(void)
 				{
 					buttons_time ++;	// only once
 					
+					LED[0] += 1;
+					if (LED[0] > 9)
+					{
+						LED[0] = 0;
+						LED[1] += 1;
+						if (LED[1] > 9)
+						{
+							LED[1] = 0;
+							LED[2] += 1;
+							if (LED[2] > 9)
+								LED[2] = 0;
+						}
+					}
 				}
 					//
 				if ((buttons_time == 10) && buttons > 0)
-				{
-					
 					Btns_action (buttons);
-				}
+				
+				
 			}
 			else 
 			{
@@ -222,7 +189,11 @@ void main(void)
 			}
 		}
 		clrwdt();
+		/**/
 		
+		d_line ++;
+		if (d_line > 2) // 4
+			d_line = 0;
 		/*
 		// Send Part -----------------------------------------------------------
 		if ((flag_send_mode == 1) && (mode != 255))
@@ -231,12 +202,6 @@ void main(void)
 			if (flag_first_launch)
 				flag_first_launch = 0;
 		}*/
-		
-		
-		
-		d_line ++;
-		if (d_line > 2) // 4
-			d_line = 0;
 		clrwdt();
 	}
 	
