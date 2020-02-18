@@ -13,31 +13,31 @@ void Btns_action (uc btn)
 	if (count != 1)
 		return;
 		
-	if (btn & 0x10)	// Up
+	if (btn & 0x01)//10	// Up
 	{
 		LED[led_active] = LED[led_active] + 1;
 		if (LED[led_active] > 9)
 			LED[led_active] = 0;
 	}
-	else if (btn & 0x08)	// Down
+	else if (btn & 0x08)//08	// Down
 	{
 		if (LED[led_active] == 0)
 			LED[led_active] = 10;
 		LED[led_active] = LED[led_active] - 1;
 	}
-	else if (btn & 0x04)	// Left. btn - blue
+	else if (btn & 0x02)//04	// Left. btn - blue
 	{
 		if (led_active == 2 - led_count) //4
 			led_active = 3;//5
 		led_active --;
 	}
-	else if (btn & 0x02)	// Right
+	else if (btn & 0x10)//02	// Right
 	{
 		led_active ++;
 		if (led_active > 2)//4
 			led_active = 2 - led_count;//4
 	}
-	else if (btn & 0x01)	// Send
+	else if (btn & 0x04)//01	// Send
 	{
 		if(flag_send_mode == 0)
 		{

@@ -130,13 +130,19 @@ void main(void)
 		// -------------------------
 		
 		// PORT E --------------------------------------------------------------
-		if (PORTE & 0x04)			//0b00000100
-			flag_manual_auto = 0;	// invert
-		else
-			flag_manual_auto = 1;
 		
-		temp = (PORTE ^ 0xF8) >> 3;	// Port E is inverted
-		if((d_line != 1) && (temp > 0))	// mode
+		//temp = (PORTE ^ 0xE0) >> 5;	// Port E is inverted
+		PORTC = 0;
+		DDRE = 0xF0;
+		PORTE = 0x0F;
+		uc t = 0;
+		for (t = 0; t < 10; t++){};
+		
+		temp = PORTE;
+		temp = temp ^ 0xE0;
+		temp = temp >> 5;
+		
+		if((d_line != 0) && (temp > 0))	// mode
 		{
 			/*
 			// Parity condition and nonzero reception
@@ -164,17 +170,48 @@ void main(void)
 					led_active = 4;
 					LED[0] = LED[1] = LED[2] = 0;
 				}
-			}	*/
+			}	
+					LED[0]++;
+					if (LED[0] > 9)
+					{
+						LED[0] = 0;
+						LED[1]++;
+						if (LED[1] > 9)
+						{
+							LED[1] = 0;
+							LED[2]++;
+							if (LED[2] > 9)
+								LED[2] = 0;
+						}
+					}
+			*/
 		}
-		else if (d_line == 0x01)	//Buttons
+		else if (d_line == 0x00)	//Buttons
 		{
+			
+			PORTD = 0xFF;
+			DDRE = 0x00;
+			
+			t = temp & 0xF0;
+			t ^= 0xF0;
+			PORTE = t | 0x0D;
+			for (t = 0; t < 10; t++){};
+			
+			t = temp << 4;
+			PORTE = t | 0x0E;
+			for (t = 0; t < 10; t++){};
+			
 			if (temp == buttons)
 			{
-				if (buttons_time <= 50)	// A pressed key will work
-					buttons_time ++;	// only once
-					//
-				if ((buttons_time == 50) && buttons > 0)
+				if (buttons_time <= 10)	// A pressed key will work
 				{
+					buttons_time ++;	// only once
+					
+				}
+					//
+				if ((buttons_time == 10) && buttons > 0)
+				{
+					
 					Btns_action (buttons);
 				}
 			}
