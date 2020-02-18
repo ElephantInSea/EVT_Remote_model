@@ -1,4 +1,77 @@
 /*The project "Respondent". Association "EVT".*/
+
+void Btns_action (uc btn)
+{
+	uc temp = btn, count = 0;
+	while(temp)
+	{
+		if (temp & 1)
+			count ++;
+		temp = temp >> 1;
+	}
+	// Will not work if none is pressed, or pressed more than 2 buttons
+	if (count != 1)
+		return;
+		
+	if (btn & 0x10)	// Up
+	{
+		LED[led_active] = LED[led_active] + 1;
+		if (LED[led_active] > 9)
+			LED[led_active] = 0;
+	}
+	else if (btn & 0x08)	// Down
+	{
+		if (LED[led_active] == 0)
+			LED[led_active] = 10;
+		LED[led_active] = LED[led_active] - 1;
+	}
+	else if (btn & 0x04)	// Left
+	{
+		if (led_active == 2 - led_count) //4
+			led_active = 3;//5
+		led_active --;
+	}
+	else if (btn & 0x02)	// Right
+	{
+		led_active ++;
+		if (led_active > 2)//4
+			led_active = 2 - led_count;//4
+	}
+	else if (btn & 0x01)	// Send
+	{
+		if(flag_send_mode == 0)
+		{
+			flag_send_mode = 1;
+			flag_rw = 1; //Write
+		}
+		else //STOP sending
+		{
+			flag_send_mode = flag_rw = 0;
+		}
+		//--------------------------
+	}
+	return;
+}
+
+uc Get_port_e(uc part)
+{
+	uc ans = 0;
+	if (part == 1) // 3
+		ans += 5;
+	
+	part = (PORTE ^ 0xF8) >> 3; // 0b000xxxxx
+	
+	while (part != 0x01)
+	{
+		part = part >> 1;
+		ans += 1;
+	}
+	if (ans > 6)
+		ans += 1;
+	/* Here you can enter the setting of the amplitude mode 1, 2, 3 */
+	return ans;
+}
+
 void Reg_Start_up ()
 {
 	GLINTD = 1;		// Disable All Interrupts
@@ -39,7 +112,7 @@ void Reg_Start_up ()
 	
 	PORTE = 0;
 	
-	LED[0] = LED[1] = LED[2] = LED[3] = LED[4] = 0;
+	LED[0] = LED[1] = LED[2] = 0;
 	
     flag_send_mode = 0;		// Turn on to receive data
     flag_rw = 0;
